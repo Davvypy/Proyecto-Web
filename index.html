@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Página Web</title>
+    <style>
+        /* Estilos aquí */
+        #background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('https://cdnb.artstation.com/p/marketplace/presentation_assets/000/341/707/large/file.jpg?1586770665');
+            background-size: cover;
+            filter: blur(8px);
+            z-index: -1;
+        }
+
+        #container {
+            display: flex;
+        }
+
+        #left-panel {
+            width: 200px;
+            background: rgba(128, 128, 128, 0.5);
+            border: 2px solid black;
+            padding: 10px;
+            position: relative;
+        }
+
+        #logo {
+            width: 150px; /* Ajusta según sea necesario */
+            display: block;
+            margin: 0 auto;
+        }
+
+        .option {
+            font-weight: bold;
+            color: black;
+            text-shadow: 1px 1px 0 white;
+            cursor: pointer;
+            margin: 10px 0;
+        }
+
+        #youtube-logo {
+            width: 30px;
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            cursor: pointer;
+        }
+
+        #center-panel {
+            flex: 1;
+            background: rgba(128, 128, 128, 0.5);
+            border: 2px solid black;
+            padding: 10px;
+        }
+
+        button {
+            margin: 5px;
+        }
+
+        #add-form, #delete-form {
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid black;
+            padding: 10px;
+            position: absolute;
+            top: 50px;
+            right: 10px;
+        }
+
+        #add-form input, #delete-form select {
+            display: block;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="background"></div>
+    <div id="container">
+        <div id="left-panel">
+            <img id="logo" src="https://cdn.discordapp.com/attachments/1244138152961249280/1271671778271559711/Proyecto_nuevDo.png?ex=66b83022&is=66b6dea2&hm=65046776db36669d12ee079e86aeaf6a241d838d4afd61974c795c4ef0227d86&" alt="Logo">
+            <div class="option" onclick="selectOption('Juegos')">Juegos</div>
+            <div class="option" onclick="selectOption('Programas')">Programas</div>
+            <div class="option" onclick="selectOption('Apks')">Apks</div>
+            <img id="youtube-logo" src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/42/YouTube_icon_%282013-2017%29.png/240px-YouTube_icon_%282013-2017%29.png" alt="YouTube Logo" onclick="window.open('https://www.youtube.com/channel/UCHl-mDWciQ419YEQN3AmSsg', '_blank')">
+        </div>
+
+        <div id="center-panel"></div>
+
+        <button id="add-button" onclick="toggleForm('add-form')">Añadir</button>
+        <button id="delete-button" onclick="toggleForm('delete-form')">Eliminar</button>
+
+        <div id="add-form" style="display: none;">
+            <label for="name">NOMBRE:</label>
+            <input type="text" id="name">
+            <label for="link">LINK:</label>
+            <input type="text" id="link">
+            <button onclick="addOption()">Finalizar</button>
+        </div>
+
+        <div id="delete-form" style="display: none;">
+            <label for="delete-select">Selecciona para eliminar:</label>
+            <select id="delete-select"></select>
+            <button onclick="deleteOption()">Eliminar</button>
+        </div>
+    </div>
+
+    <!-- Incluye los scripts de Firebase -->
+    <script type="module">
+        // Importa las funciones necesarias de los SDKs que necesitas
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
+        import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-analytics.js";
+
+        // Configuración de Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyDRZJdSl6sviJ3YgaHMsDIZ8wHANSvT74c",
+            authDomain: "pagina-web-datos.firebaseapp.com",
+            projectId: "pagina-web-datos",
+            storageBucket: "pagina-web-datos.appspot.com",
+            messagingSenderId: "118283239149",
+            appId: "1:118283239149:web:2d1d5ea5cdf494d954d6e4",
+            measurementId: "G-X79FGGQREK"
+        };
+
+        // Inicializa Firebase
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+        const analytics = getAnalytics(app);
+
+        let currentSection = '';
+        const creator = true; // Cambia esto según si el usuario es el creador
+
+        function selectOption(option) {
+            currentSection = option;
+            displaySection(option);
+            if (creator) {
+                document.getElementById('add-button').style.display = 'block';
+                document.getElementById('delete-button').style.display = 'block';
+            }
+        }
+
+        function toggleForm(formId) {
+            const form = document.getElementById(formId);
+            form.style.display = form.style.display === 'block' ? 'none' : 'block';
+        }
+
+        function addOption() {
+            const name = document.getElementById('name').value;
+            const link = document.getElementById('link').value;
+
+            if (name && link) {
+                const newRef = ref(database, `/${currentSection}`).push();
+                set(newRef, { name, link }).then(() => {
+                    displaySection(currentSection);
+                    toggleForm('add-form');
+                });
+            }
+        }
+
+        function displaySection(section) {
+            const panel = document.getElementById('center-panel');
+            panel.innerHTML = ''; // Limpiar el panel
+
+            onValue(ref(database, `/${section}`), snapshot => {
+                snapshot.forEach(childSnapshot => {
+                    const data = childSnapshot.val();
+                    const item = document.createElement('div');
+                    item.textContent = data.name;
+                    item.onclick = () => window.open(data.link, '_blank');
+                    panel.appendChild(item);
+                });
+
+                if (creator) {
+                    populateDeleteOptions();
+                }
+            });
+        }
+
+        function populateDeleteOptions() {
+            const select = document.getElementById('delete-select');
+            select.innerHTML = ''; // Limpiar opciones anteriores
+
+            onValue(ref(database, `/${currentSection}`), snapshot => {
+                snapshot.forEach(childSnapshot => {
+                    const data = childSnapshot.val();
+                    const option = document.createElement('option');
+                    option.value = childSnapshot.key;
+                    option.textContent = data.name;
+                    select.appendChild(option);
+                });
+            });
+        }
+
+        function deleteOption() {
+            const select = document.getElementById('delete-select');
+            const selectedKey = select.value;
+
+            if (selectedKey) {
+                remove(ref(database, `/${currentSection}/${selectedKey}`)).then(() => {
+                    displaySection(currentSection);
+                    toggleForm('delete-form');
+                });
+            }
+        }
+
+        // Inicializa la vista de la sección seleccionada al cargar
+        document.addEventListener("DOMContentLoaded", function() {
+            selectOption('Juegos'); // Cambia esto según la sección que desees mostrar por defecto
+        });
+    </script>
+</body>
+</html>
