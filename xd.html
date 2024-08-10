@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Página Web</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+        }
+
+        #background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('https://cdnb.artstation.com/p/marketplace/presentation_assets/000/341/707/large/file.jpg?1586770665');
+            background-size: cover;
+            background-position: center;
+            filter: blur(8px);
+            z-index: -1;
+        }
+
+        #container {
+            position: relative;
+            height: 100%;
+        }
+
+        #left-panel {
+            position: absolute;
+            top: 10%;
+            left: 5%;
+            width: 300px;
+            background-color: rgba(128, 128, 128, 0.7);
+            border: 2px solid black;
+            padding: 20px;
+        }
+
+        #center-panel {
+            position: absolute;
+            top: 25%;
+            left: 50%;
+            transform: translate(-50%, -25%);
+            width: 400px;
+            height: 400px;
+            background-color: rgba(128, 128, 128, 0.7);
+            border: 2px solid black;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        #logo {
+            display: block;
+            margin: 0 auto;
+            width: 250px; /* Ampliado más la imagen */
+        }
+
+        .option {
+            margin-top: 20px;
+            padding: 10px;
+            text-align: center;
+            background-color: black;
+            color: white;
+            border: 2px solid white;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        #youtube-logo {
+            display: block;
+            margin: 20px auto 0;
+            width: 40px;
+            transition: transform 0.5s;
+        }
+
+        #youtube-logo:hover {
+            transform: rotate(360deg);
+        }
+
+        #add-button, #delete-button {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            margin-left: 10px;
+            padding: 10px 20px;
+            background-color: black;
+            color: white;
+            font-weight: bold;
+            border: 2px solid white;
+            cursor: pointer;
+            display: none; /* Ocultar por defecto */
+        }
+
+        #delete-button {
+            right: 140px; /* Ajuste de posición para mantener ambos botones juntos */
+        }
+
+        #add-form, #delete-form {
+            display: none;
+            position: absolute;
+            top: 50px;
+            right: 20px;
+            background-color: rgba(128, 128, 128, 0.9);
+            padding: 20px;
+            border: 2px solid black;
+        }
+
+        #add-form input[type="text"], #delete-form select {
+            width: 100%;
+            padding: 5px;
+            margin-bottom: 10px;
+        }
+
+        #add-form button, #delete-form button {
+            width: 100%;
+            padding: 10px;
+            background-color: black;
+            color: white;
+            font-weight: bold;
+            border: 2px solid white;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div id="background"></div>
+
+    <div id="container">
+        <div id="left-panel">
+            <img id="logo" src="https://cdn.discordapp.com/attachments/1244138152961249280/1271671778271559711/Proyecto_nuevDo.png?ex=66b83022&is=66b6dea2&hm=65046776db36669d12ee079e86aeaf6a241d838d4afd61974c795c4ef0227d86&" alt="Logo">
+            <div class="option" onclick="selectOption('Juegos')">Juegos</div>
+            <div class="option" onclick="selectOption('Programas')">Programas</div>
+            <div class="option" onclick="selectOption('Apks')">Apks</div>
+            <img id="youtube-logo" src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/42/YouTube_icon_%282013-2017%29.png/240px-YouTube_icon_%282013-2017%29.png" alt="YouTube Logo" onclick="window.open('https://www.youtube.com/channel/UCHl-mDWciQ419YEQN3AmSsg', '_blank')">
+        </div>
+
+        <div id="center-panel"></div>
+
+        <button id="add-button" onclick="toggleForm('add-form')">Añadir</button>
+        <button id="delete-button" onclick="toggleForm('delete-form')">Eliminar</button>
+
+        <div id="add-form">
+            <label for="name">NOMBRE:</label>
+            <input type="text" id="name">
+            <label for="link">LINK:</label>
+            <input type="text" id="link">
+            <button onclick="addOption()">Finalizar</button>
+        </div>
+
+        <div id="delete-form">
+            <label for="delete-select">Selecciona para eliminar:</label>
+            <select id="delete-select"></select>
+            <button onclick="deleteOption()">Eliminar</button>
+        </div>
+    </div>
+
+    <script>
+        const creator = true;  // Cambia esto a "false" para esconder los botones "Añadir" y "Eliminar"
+        let currentSection = '';
+        const sections = JSON.parse(localStorage.getItem('sections')) || {
+            'Juegos': [],
+            'Programas': [],
+            'Apks': []
+        };
+
+        document.addEventListener("DOMContentLoaded", function() {
+            if (creator) {
+                document.getElementById('add-button').style.display = 'block';
+                document.getElementById('delete-button').style.display = 'block';
+            }
+        });
+
+        function selectOption(option) {
+            currentSection = option;
+            displaySection(option);
+            if (creator) {
+                document.getElementById('add-button').style.display = 'block';
+                document.getElementById('delete-button').style.display = 'block';
+            }
+        }
+
+        function toggleForm(formId) {
+            const form = document.getElementById(formId);
+            form.style.display = form.style.display === 'block' ? 'none' : 'block';
+        }
+
+        function addOption() {
+            const name = document.getElementById('name').value;
+            const link = document.getElementById('link').value;
+
+            if (name && link) {
+                sections[currentSection].push({ name, link });
+                saveSections();
+                displaySection(currentSection);
+                toggleForm('add-form');
+            }
+        }
+
+        function displaySection(section) {
+            const panel = document.getElementById('center-panel');
+            panel.innerHTML = '';
+            sections[section].forEach(item => {
+                const newOption = document.createElement('div');
+                newOption.className = 'option';
+                newOption.textContent = item.name;
+                newOption.onclick = function() {
+                    window.open(item.link, '_blank');
+                };
+                panel.appendChild(newOption);
+            });
+            updateDeleteSelect();
+        }
+
+        function updateDeleteSelect() {
+            const deleteSelect = document.getElementById('delete-select');
+            deleteSelect.innerHTML = '';
+            sections[currentSection].forEach((item, index) => {
+                const option = document.createElement('option');
+                option.value = index;
+                option.textContent = item.name;
+                deleteSelect.appendChild(option);
+            });
+        }
+
+        function deleteOption() {
+            const selectedIndex = document.getElementById('delete-select').value;
+            sections[currentSection].splice(selectedIndex, 1);
+            saveSections();
+            displaySection(currentSection);
+            toggleForm('delete-form');
+        }
+
+        function saveSections() {
+            localStorage.setItem('sections', JSON.stringify(sections));
+        }
+    </script>
+</body>
+</html>
